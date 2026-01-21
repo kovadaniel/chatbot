@@ -1,11 +1,10 @@
 import './App.css'
-import SingleChatPage from './pages/SingleChatPage'
+import AppRouter from './router/AppRouter'
 
 function App() {
-
   return (
     <div>        
-      <SingleChatPage />
+      <AppRouter />
     </div>
   )
 }
