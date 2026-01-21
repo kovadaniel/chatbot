@@ -1,45 +1,15 @@
 import { useState, useRef, useEffect } from "react"
 
-type Message = {
-  id: number
-  text: string
-  sender: "me" | "other"
-  time: string
-}
+import { useChatStore } from "../../store/chatStore"
 
 export default function SingleChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Привет мир!",
-      sender: "other",
-      time: "09:40",
-    },
-  ])
-
+  const { messages, sendMessage } = useChatStore()
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  function getTime() {
-    return new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  function sendMessage() {
+  const handleSend = () => {
     if (!input.trim()) return
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        text: input,
-        sender: "me",
-        time: getTime(),
-      },
-    ])
-
+    sendMessage(input)
     setInput("")
   }
 
@@ -59,7 +29,6 @@ export default function SingleChatPage() {
           </div>
         </header>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
           {messages.map((msg) => (
             <div
@@ -93,11 +62,11 @@ export default function SingleChatPage() {
             placeholder="Write a message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <button
-            onClick={sendMessage}
+            onClick={handleSend}
             className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium transition"
           >
             Send
