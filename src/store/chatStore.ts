@@ -3,13 +3,16 @@ import { create } from "zustand"
 export type Message = {
   id: number
   text: string
-  sender: "me" | "other"
+  role: "user" | "bot"
   time: string
 }
 
 type ChatState = {
   messages: Message[]
-  sendMessage: (text: string) => void
+  addUserMessage: (text: string) => void
+  startBotMessage: () => number
+  appendToMessage: (id: number, chunk: string) => void
+  clear: () => void
 }
 
 function getTime() {
@@ -20,25 +23,40 @@ function getTime() {
 }
 
 export const useChatStore = create<ChatState>((set) => ({
-  messages: [
-    {
-      id: 1,
-      text: "Hello world!",
-      sender: "other",
-      time: getTime(),
-    },
-  ],
-
-  sendMessage: (text) =>
+  messages: [],
+  addUserMessage: (text) =>
     set((state) => ({
       messages: [
         ...state.messages,
         {
           id: Date.now(),
-          text,
-          sender: "me",
+          role: "user",
+          text: text,
           time: getTime(),
         },
       ],
     })),
+    startBotMessage: () => {
+    const id = Date.now()
+    set((state) => ({
+      messages: [
+        ...state.messages,
+        {
+          id,
+          role: "bot",
+          text: "",
+          time: getTime(),
+        },
+      ],
+    }))
+    return id;
+  },
+  appendToMessage: (id, chunk) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === id ? { ...m, text: m.text + chunk } : m
+      ),
+    })),
+
+  clear: () => set({ messages: [] }),
 }))
