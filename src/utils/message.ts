@@ -1,4 +1,4 @@
-import type { Message } from "./types";
+import type { Message } from "../store/types";
 
 export function getTime(): string {
   return new Date().toLocaleTimeString([], {

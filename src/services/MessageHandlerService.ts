@@ -4,7 +4,7 @@ import {
   findLastUserMessage,
   createMessageId,
   createBotMessageId,
-} from "../store/messageUtils";
+} from "../utils/message";
 import type { StoreApi } from "zustand";
 
 type StoreAccess = Pick<StoreApi<ChatState>, "setState" | "getState">;

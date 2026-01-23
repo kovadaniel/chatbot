@@ -1,52 +1,40 @@
-import { useEffect, useRef, useCallback, type RefObject } from "react";
-import { useChatStore } from "../../../store/chatStore";
+import { useRef, useCallback, type RefObject } from "react";
 
 const ScrollButton = ({
   bottomRef,
   isScrollingRef,
+  onScroll,
 }: {
   bottomRef: RefObject<HTMLDivElement | null>;
   isScrollingRef: RefObject<boolean>;
+  onScroll?: () => void;
 }) => {
-  const { messages } = useChatStore();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    isScrollingRef.current = true;
-    bottomRef?.current?.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-    });
-    
-    timeoutRef.current = setTimeout(() => {
-      isScrollingRef.current = false;
-      timeoutRef.current = null;
-    }, smooth ? 600 : 100);
-  }, [bottomRef, isScrollingRef]);
-
-  const lastMessageLength = messages[messages.length - 1]?.text.length || 0;
-
-  useEffect(() => {
-    if (lastMessageLength) {
-      scrollToBottom(false);
-    }
-
-    return () => {
+  const scrollToBottom = useCallback(
+    (smooth = true) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-    };
-  }, [lastMessageLength, scrollToBottom]);
+
+      isScrollingRef.current = true;
+      bottomRef?.current?.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+      });
+
+      timeoutRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+        timeoutRef.current = null;
+        onScroll?.();
+      }, smooth ? 600 : 100);
+    },
+    [bottomRef, isScrollingRef, onScroll],
+  );
 
   return (
     <button
-      onClick={() => {
-        scrollToBottom();
-      }}
-      className="fixed bottom-24 right-6 bg-white shadow-lg rounded-full px-4 py-2 text-sm font-medium hover:bg-slate-100"
+      onClick={() => scrollToBottom(true)}
+      className="sticky bottom-0 left-[90%] bg-white shadow-lg rounded-full px-4 py-2 text-sm font-medium hover:bg-slate-100"
     >
       ↓ Вниз
     </button>

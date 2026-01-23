@@ -1,26 +1,83 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useChatStore } from "../../../store/chatStore";
 import ScrollButton from "./ScrollButton";
+import { SCROLL_BOTTOM_THRESHOLD } from "../../../config/consts";
 
 const History = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const isScrollingRef = useRef(false);
+  const userScrolledUpRef = useRef(false);
+  const lastMessageLengthRef = useRef(0);
 
-  const { messages } = useChatStore();
+  const { messages, isStreaming } = useChatStore();
 
-  function handleScroll() {
+  const isAtBottom = useCallback((el: HTMLDivElement): boolean => {
+    return el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_BOTTOM_THRESHOLD;
+  }, []);
+
+  const scrollToBottom = useCallback((smooth = false) => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    isScrollingRef.current = true;
+    bottomRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+    });
+
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, smooth ? 600 : 100);
+  }, []);
+
+  const handleScroll = useCallback(() => {
     if (isScrollingRef.current) return;
 
     const el = containerRef.current;
     if (!el) return;
 
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    const atBottom = isAtBottom(el);
+    setShowScrollBtn(!atBottom);
 
-    setShowScrollBtn(!isAtBottom);
-  }
+    if (isStreaming && !atBottom) {
+      userScrolledUpRef.current = true;
+    }
+
+    if (atBottom) {
+      userScrolledUpRef.current = false;
+    }
+  }, [isAtBottom, isStreaming]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    if (!isStreaming) {
+      userScrolledUpRef.current = false;
+      lastMessageLengthRef.current = 0;
+      return;
+    }
+
+    if (isAtBottom(el) && !userScrolledUpRef.current) {
+      userScrolledUpRef.current = false;
+      scrollToBottom(false);
+    }
+
+    if (userScrolledUpRef.current) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const currentMessageLength = lastMessage?.text.length || 0;
+
+    if (currentMessageLength !== lastMessageLengthRef.current) {
+      lastMessageLengthRef.current = currentMessageLength;
+      requestAnimationFrame(() => {
+        if (!userScrolledUpRef.current && el) {
+          scrollToBottom(false);
+        }
+      });
+    }
+  }, [messages, isStreaming, isAtBottom, scrollToBottom]);
 
   return (
     <div
@@ -52,7 +109,13 @@ const History = () => {
       ))}
       <div ref={bottomRef} />
       {showScrollBtn && (
-        <ScrollButton bottomRef={bottomRef} isScrollingRef={isScrollingRef} />
+        <ScrollButton
+          bottomRef={bottomRef}
+          isScrollingRef={isScrollingRef}
+          onScroll={() => {
+            userScrolledUpRef.current = false;
+          }}
+        />
       )}
     </div>
   );

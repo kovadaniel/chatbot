@@ -1,6 +1,6 @@
 import { generateText } from "../utils/generateText";
 import type { StreamingState, ChatState } from "../store/types";
-import { MessageHandlerService } from "./messageHandlers";
+import { MessageHandlerService } from "./MessageHandlerService";
 import type { StoreApi } from "zustand";
 
 type StoreAccess = Pick<StoreApi<ChatState>, "setState" | "getState">;
