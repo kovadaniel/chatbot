@@ -5,34 +5,51 @@ import { generateText } from "../../../utils/generateText";
 const Panel = () => {
   const { addUserMessage, startBotMessage, appendToMessage } = useChatStore();
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const chunkBuffer = useRef("");
   const streamingId = useRef<number | null>(null);
+  const streamRef = useRef<{ stop: () => void } | null>(null)
 
   const handleSend = () => {
     if (!input.trim()) return;
+    addUserMessage(input);
     setInput("");
   };
 
-  const handleGenerate = () => {
-    addUserMessage("Message");
+  function handleStop() {
+    streamRef.current?.stop();
+    streamRef.current = null;
+    setIsStreaming(false);
+  }
 
+  const handleGenerate = () => {
+    if (isStreaming) return;
+
+    addUserMessage("Generate a very long answer");
     const assistantId = startBotMessage();
     streamingId.current = assistantId;
+    setIsStreaming(true);
 
-    function flush() {
+    let rafId: number;
+    const flush = () => {
       if (chunkBuffer.current && streamingId.current) {
         appendToMessage(streamingId.current, chunkBuffer.current);
         chunkBuffer.current = "";
       }
-      requestAnimationFrame(flush);
-    }
-    requestAnimationFrame(flush);
+      rafId = requestAnimationFrame(flush);
+    };
+    rafId = requestAnimationFrame(flush);
 
-    generateText({
+    streamRef.current = generateText({
       interval: 15,
       totalWords: 10000,
       onChunk: (chunk) => {
         chunkBuffer.current += chunk;
+      },
+      onDone: () => {
+        cancelAnimationFrame(rafId);
+        setIsStreaming(false);
+        streamRef.current = null;
       },
     });
   };
@@ -51,14 +68,22 @@ const Panel = () => {
         onClick={handleSend}
         className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium transition"
       >
-        Send
+        Отправить
       </button>
-      <button
+      {!isStreaming && <button
         onClick={handleGenerate}
         className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
       >
-        Generate
-      </button>
+        Сгенерировать
+      </button>}
+      {isStreaming && (
+        <button
+          onClick={handleStop}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-medium"
+        >
+          Остановить генерацию
+        </button>
+      )}
     </div>
   );
 };

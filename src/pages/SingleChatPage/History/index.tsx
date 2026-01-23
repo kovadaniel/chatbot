@@ -1,27 +1,44 @@
-import { useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import { useChatStore } from "../../../store/chatStore";
+import ScrollButton from "./ScrollButton";
 
 const History = () => {
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const isScrollingRef = useRef(false);
+
   const { messages } = useChatStore();
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  function handleScroll() {
+    if (isScrollingRef.current) return;
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+
+    setShowScrollBtn(!isAtBottom);
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="relative flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-slate-50"
+    >
       {messages.map((msg) => (
         <div
           key={msg.id}
           className={`flex ${
-            msg.sender === "me" ? "justify-end" : "justify-start"
+            msg.role === "user" ? "justify-end" : "justify-start"
           }`}
         >
           <div
             className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm shadow
                 ${
-                  msg.sender === "me"
+                  msg.role === "user"
                     ? "bg-blue-500 text-white rounded-br-sm"
                     : "bg-white text-slate-800 rounded-bl-sm"
                 }`}
@@ -33,7 +50,10 @@ const History = () => {
           </div>
         </div>
       ))}
-      <div ref={messagesEndRef} />
+      <div ref={bottomRef} />
+      {showScrollBtn && (
+        <ScrollButton bottomRef={bottomRef} isScrollingRef={isScrollingRef} />
+      )}
     </div>
   );
 };
