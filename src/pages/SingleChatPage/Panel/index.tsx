@@ -1,57 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useChatStore } from "../../../store/chatStore";
-import { generateText } from "../../../utils/generateText";
 
 const Panel = () => {
-  const { addUserMessage, startBotMessage, appendToMessage } = useChatStore();
+  const { addUserMessage, isStreaming, startGeneration, stopGeneration } = useChatStore();
   const [input, setInput] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const chunkBuffer = useRef("");
-  const streamingId = useRef<number | null>(null);
-  const streamRef = useRef<{ stop: () => void } | null>(null)
 
   const handleSend = () => {
     if (!input.trim()) return;
     addUserMessage(input);
     setInput("");
-  };
-
-  function handleStop() {
-    streamRef.current?.stop();
-    streamRef.current = null;
-    setIsStreaming(false);
-  }
-
-  const handleGenerate = () => {
-    if (isStreaming) return;
-
-    addUserMessage("Generate a very long answer");
-    const assistantId = startBotMessage();
-    streamingId.current = assistantId;
-    setIsStreaming(true);
-
-    let rafId: number;
-    const flush = () => {
-      if (chunkBuffer.current && streamingId.current) {
-        appendToMessage(streamingId.current, chunkBuffer.current);
-        chunkBuffer.current = "";
-      }
-      rafId = requestAnimationFrame(flush);
-    };
-    rafId = requestAnimationFrame(flush);
-
-    streamRef.current = generateText({
-      interval: 15,
-      totalWords: 10000,
-      onChunk: (chunk) => {
-        chunkBuffer.current += chunk;
-      },
-      onDone: () => {
-        cancelAnimationFrame(rafId);
-        setIsStreaming(false);
-        streamRef.current = null;
-      },
-    });
   };
 
   return (
@@ -70,15 +27,17 @@ const Panel = () => {
       >
         Отправить
       </button>
-      {!isStreaming && <button
-        onClick={handleGenerate}
-        className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
-      >
-        Сгенерировать
-      </button>}
+      {!isStreaming && (
+        <button
+          onClick={startGeneration}
+          className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
+        >
+          Сгенерировать
+        </button>
+      )}
       {isStreaming && (
         <button
-          onClick={handleStop}
+          onClick={stopGeneration}
           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-medium"
         >
           Остановить генерацию
