@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ChatState } from "./types";
 import { MessageHandlerService } from "../services/MessageHandlerService";
-import { GenerationService } from "../services/generationService";
+import { GenerationService } from "../services/GenerationService";
 
 export const useChatStore = create<ChatState>((set, get) => {
   const storeApi = {

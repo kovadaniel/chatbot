@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useChatStore } from "../../../store/chatStore";
+import MessageInput from "./MessageInput";
 
 const Panel = () => {
   const { addUserMessage, isStreaming, startGeneration, stopGeneration } = useChatStore();
@@ -12,14 +13,12 @@ const Panel = () => {
   };
 
   return (
-    <div className="h-16 border-t flex items-center gap-3 px-4">
-      <input
-        type="text"
-        placeholder="Write a message..."
+    <div className="min-h-16 border-t flex items-center gap-3 px-4 py-2">
+      <MessageInput
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+        onChange={setInput}
+        onSend={handleSend}
+        placeholder="Write a message..."
       />
       <button
         onClick={handleSend}
