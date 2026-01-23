@@ -1,25 +1,29 @@
 import { create } from "zustand";
 import type { ChatState } from "./types";
-import { createUserMessage, createBotMessage } from "./messageHandlers";
-import { createGenerationService } from "./generationService";
-
+import { MessageHandlerService } from "../services/messageHandlers";
+import { GenerationService } from "../services/generationService";
 
 export const useChatStore = create<ChatState>((set, get) => {
-  const generationService = createGenerationService(set, get);
+  const storeApi = {
+    setState: set,
+    getState: get,
+  };
+  const generationService = new GenerationService(storeApi);
+  const messageHandler = new MessageHandlerService(storeApi);
 
   return {
     messages: [],
     isStreaming: false,
 
     addUserMessage: (text) => {
-      const newMessage = createUserMessage(text);
+      const newMessage = messageHandler.createUserMessage(text);
       set((state) => ({
         messages: [...state.messages, newMessage],
       }));
     },
 
     startBotMessage: () => {
-      return createBotMessage(set);
+      return messageHandler.createBotMessage();
     },
 
     appendToMessage: (id, chunk) => {
